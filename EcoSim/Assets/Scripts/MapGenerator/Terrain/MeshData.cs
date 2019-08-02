@@ -2,13 +2,13 @@
 
 public class TerrainMeshData
 {
-    Vector3[] vertices;
+    Vector3[]      vertices;
     readonly int[] triangles;
-    Vector2[] uvs;
-    Vector3[] bakedNormals;
+    Vector2[]      uvs;
+    Vector3[]      bakedNormals;
 
     readonly Vector3[] outOfMeshVertices;
-    readonly int[] outOfMeshTriangles;
+    readonly int[]     outOfMeshTriangles;
 
     int triangleIndex;
     int outOfMeshTriangleIndex;
@@ -75,14 +75,14 @@ public class TerrainMeshData
     {
         if (a < 0 || b < 0 || c < 0)
         {
-            outOfMeshTriangles[outOfMeshTriangleIndex] = a;
+            outOfMeshTriangles[outOfMeshTriangleIndex + 0] = a;
             outOfMeshTriangles[outOfMeshTriangleIndex + 1] = b;
             outOfMeshTriangles[outOfMeshTriangleIndex + 2] = c;
             outOfMeshTriangleIndex += 3;
         }
         else
         {
-            triangles[triangleIndex] = a;
+            triangles[triangleIndex + 0] = a;
             triangles[triangleIndex + 1] = b;
             triangles[triangleIndex + 2] = c;
             triangleIndex += 3;

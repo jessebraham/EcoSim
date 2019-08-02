@@ -36,7 +36,8 @@ public static class Noise
             for (int x = 0; x < mapWidth; x++)
             {
                 amplitude = 1;
-                float frequency = 1;
+
+                float frequency   = 1;
                 float noiseHeight = 0;
 
                 for (int i = 0; i < settings.octaves; i++)

@@ -8,12 +8,8 @@ public class MapGeneratorPreviewEditor : Editor
     {
         var generator = target as MapGeneratorPreview;
 
-        if (DrawDefaultInspector() && generator.autoUpdate)
-        {
-            generator.GenerateMap();
-        }
-
-        if (GUILayout.Button("Generate"))
+        if ((DrawDefaultInspector() && generator.heightMapSettings.autoUpdate)
+            || GUILayout.Button("Generate"))
         {
             generator.GenerateMap();
         }

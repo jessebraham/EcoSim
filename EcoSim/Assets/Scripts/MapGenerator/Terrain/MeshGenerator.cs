@@ -4,7 +4,7 @@ public static class MeshGenerator
 {
     public static TerrainMeshData GenerateTerrainMesh(float[,] heightMap, MeshSettings meshSettings, int levelOfDetail)
     {
-        int skipIncrement   = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+        int skipIncrement   = levelOfDetail == 0 ? 1 : levelOfDetail * 2;
         int numVertsPerLine = meshSettings.NumVertsPerLine;
 
         Vector2 topLeft = new Vector2(-1, 1) * meshSettings.MeshWorldSize / 2f;
@@ -60,8 +60,8 @@ public static class MeshGenerator
                         int dstToMainVertexB     = skipIncrement - dstToMainVertexA;
                         float dstPercentFromAToB = dstToMainVertexA / (float)skipIncrement;
 
-                        float heightMainVertexA = heightMap[(isVertical) ? x : x - dstToMainVertexA, (isVertical) ? y - dstToMainVertexA : y];
-                        float heightMainVertexB = heightMap[(isVertical) ? x : x + dstToMainVertexB, (isVertical) ? y + dstToMainVertexB : y];
+                        float heightMainVertexA = heightMap[isVertical ? x : x - dstToMainVertexA, isVertical ? y - dstToMainVertexA : y];
+                        float heightMainVertexB = heightMap[isVertical ? x : x + dstToMainVertexB, isVertical ? y + dstToMainVertexB : y];
 
                         height = heightMainVertexA * (1 - dstPercentFromAToB) + heightMainVertexB * dstPercentFromAToB;
                     }
