@@ -8,6 +8,7 @@ public class MeshSettings : UpdatableData
     public const int numSupportedFlatshadedChunkSizes = 3;
     public static readonly int[] supportedChunkSizes  = { 48, 72, 96, 120, 144, 168, 192, 216, 240 };
 
+    public int   meshSize  = 200;
     public float meshScale = 2.5f;
     public bool  useFlatShading;
 
@@ -24,7 +25,7 @@ public class MeshSettings : UpdatableData
     {
         get
         {
-            return supportedChunkSizes[(useFlatShading) ? flatshadedChunkSizeIndex : chunkSizeIndex] + 5;
+            return supportedChunkSizes[useFlatShading ? flatshadedChunkSizeIndex : chunkSizeIndex] + 5;
         }
     }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -6,9 +6,9 @@ public static class MapGenerator
 {
     public static void GenerateMap(MapGraph graph)
     {
-        SetNodesToGrass(graph, 4.5f, 3f);
+        SetNodesToGrass(graph);
 
-        SetLowNodesToWater(graph, 0.2f);
+        SetLowNodesToWater(graph, 0.4f);
         SetEdgesToWater(graph);
         FillOcean(graph);
 
@@ -16,26 +16,18 @@ public static class MapGenerator
         FindRivers(graph, 12f);
         CreateLakes(graph);
 
-        AddMountains(graph, 8f, 6.5f, 6.5f, 5.5f, 17f);
-        AddTallGrass(graph, 3f, 3.5f);
+        AddMountains(graph, 5f, 5f, 8f, 6.5f, 15f);
+        AddTallGrass(graph, 2f, 2.5f);
 
         AverageCenterPoints(graph);
     }
 
 
-    private static void SetNodesToGrass(MapGraph graph, float minElevation, float minHeightDifference)
+    private static void SetNodesToGrass(MapGraph graph)
     {
         foreach (var node in graph.nodesByCenterPosition.Values)
         {
-            if (node.GetElevation() > minElevation
-                || node.GetHeightDifference() > minHeightDifference)
-            {
-                node.nodeType = MapGraph.MapNodeType.TallGrass;
-            }
-            else
-            {
-                node.nodeType = MapGraph.MapNodeType.Grass;
-            }
+            node.nodeType = MapGraph.MapNodeType.Grass;
         }
     }
 
@@ -82,7 +74,8 @@ public static class MapGenerator
     private static void FillOcean(MapGraph graph)
     {
         var startNode = graph.nodesByCenterPosition
-            .FirstOrDefault(x => x.Value.IsEdge() && x.Value.nodeType == MapGraph.MapNodeType.FreshWater)
+            .FirstOrDefault(x => x.Value.IsEdge()
+                            && x.Value.nodeType == MapGraph.MapNodeType.FreshWater)
             .Value;
 
         FloodFill(startNode, MapGraph.MapNodeType.FreshWater, MapGraph.MapNodeType.SaltWater);
@@ -90,7 +83,8 @@ public static class MapGenerator
 
     private static void FloodFill(MapGraph.MapNode node, MapGraph.MapNodeType targetType, MapGraph.MapNodeType replacementType)
     {
-        if (targetType == replacementType || node.nodeType != targetType)
+        if (targetType == replacementType
+            || node.nodeType != targetType)
         {
             return;
         }
@@ -195,14 +189,16 @@ public static class MapGenerator
 
                 nextEdge = GetDownSlopeEdge(currentEdge, riverEdges);
 
-                if (nextEdge == null && previousEdge != null)
+                if (nextEdge == null
+                    && previousEdge != null)
                 {
                     // We need to start carving a path for the river.
                     nextEdge = GetNewCandidateEdge(graph.GetCenter(), currentEdge, riverEdges, previousRiverEdges);
 
                     // If we can't get a candidate edge, then backtrack and try again
                     var previousEdgeIndex = riverEdges.Count - 1;
-                    while (nextEdge == null || previousEdgeIndex == 0)
+                    while (nextEdge == null
+                           || previousEdgeIndex == 0)
                     {
                         previousEdge = riverEdges[previousEdgeIndex];
                         previousEdge.water--;
@@ -212,6 +208,7 @@ public static class MapGenerator
                         riverEdges.Remove(previousEdge);
                         previousEdgeIndex--;
                     }
+
                     if (nextEdge != null)
                     {
                         if (nextEdge.previous.destination.position.y != nextEdge.destination.position.y)
@@ -270,15 +267,24 @@ public static class MapGenerator
             return existingRiverEdge;
         }
 
-        return candidates.OrderByDescending(x => x.GetSlopeAngle()).FirstOrDefault();
+        return candidates
+            .OrderByDescending(x => x.GetSlopeAngle())
+            .FirstOrDefault();
     }
 
-    private static MapGraph.MapNodeHalfEdge GetNewCandidateEdge(Vector3 center, MapGraph.MapNodeHalfEdge source, List<MapGraph.MapNodeHalfEdge> seenEdges, List<MapGraph.MapNodeHalfEdge> previousEdges)
+    private static MapGraph.MapNodeHalfEdge GetNewCandidateEdge(
+        Vector3 center,
+        MapGraph.MapNodeHalfEdge source,
+        List<MapGraph.MapNodeHalfEdge> seenEdges,
+        List<MapGraph.MapNodeHalfEdge> previousEdges
+    )
     {
         var corner = source.destination;
 
         var edges = corner.GetEdges()
-            .Where(x => !seenEdges.Contains(x) && x.opposite != null && !seenEdges.Contains(x.opposite))
+            .Where(x => !seenEdges.Contains(x)
+                   && x.opposite != null
+                   && !seenEdges.Contains(x.opposite))
             .ToList();
 
         // Make sure the river prefers to follow existing rivers
@@ -316,7 +322,8 @@ public static class MapGenerator
         foreach (var node in graph.nodesByCenterPosition.Values)
         {
             var edges = node.GetEdges();
-            if (!edges.Any(x => x.water == 0))
+            if (!edges.Any(x => x.water == 0)
+                || edges.Where(x => x.water > 0).Count() > 3)
             {
                 var lowestCorner = node.GetLowestCorner();
                 node.nodeType    = MapGraph.MapNodeType.FreshWater;
@@ -339,8 +346,8 @@ public static class MapGenerator
 
     private static void AddMountains(
         MapGraph graph,
-        float minElevation, float minHeightDifference,
         float minRockyElevation, float minRockyHeightDifference,
+        float minElevation, float minHeightDifference,
         float minSnowElevation
     )
     {
@@ -372,6 +379,13 @@ public static class MapGenerator
                 continue;
             }
 
+            if (node.GetElevation() > minElevation
+                || node.GetHeightDifference() > minHeightDifference)
+            {
+                node.nodeType = MapGraph.MapNodeType.TallGrass;
+                continue;
+            }
+
             foreach (var neighbor in node.GetNeighborNodes())
             {
                 if (neighbor.nodeType == MapGraph.MapNodeType.FreshWater)
@@ -379,12 +393,6 @@ public static class MapGenerator
                     node.nodeType = MapGraph.MapNodeType.TallGrass;
                     break;
                 }
-            }
-
-            if (node.GetElevation() > minElevation
-                || node.GetHeightDifference() > minHeightDifference)
-            {
-                node.nodeType = MapGraph.MapNodeType.TallGrass;
             }
         }        
     }

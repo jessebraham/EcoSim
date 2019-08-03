@@ -24,7 +24,7 @@ public static class HeightMapGenerator
         if (settings.useFalloff)
         {
             var curve = new AnimationCurve(settings.falloffCurve.keys);
-            falloff   = FalloffGenerator.GenerateFalloffMap(width, settings.falloffType, curve);
+            falloff   = FalloffGenerator.GenerateFalloffMap(width, curve);
         }
 
         AnimationCurve threadSafeHeightCurve = new AnimationCurve(settings.heightCurve.keys);

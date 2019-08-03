@@ -148,7 +148,7 @@ public partial class MapGraph
                 var insertEdges = false;
                 if (i < boundries.Count - 1)
                 {
-                    start       = ToVector3(boundries[i].p1.Value);
+                    start       = ToVector3(boundries[i + 0].p1.Value);
                     end         = ToVector3(boundries[i + 1].p0.Value);
                     insertEdges = start != end;
                 }

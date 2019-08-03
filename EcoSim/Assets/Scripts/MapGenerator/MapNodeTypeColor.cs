@@ -5,5 +5,5 @@ using UnityEngine;
 public class MapNodeTypeColor
 {
     public MapGraph.MapNodeType type;
-    public Color color;
+    public Color colour;
 }

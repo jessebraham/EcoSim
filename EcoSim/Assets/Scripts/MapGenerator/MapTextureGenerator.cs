@@ -5,6 +5,16 @@ public static class MapTextureGenerator
 {
     private static Material drawingMaterial;
 
+
+    public static Texture2D GenerateTexture(MapGraph map, int meshSize, int textureSize, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
+    {
+        CreateDrawingMaterial();
+        var texture = RenderGLToTexture(map, textureSize, meshSize, drawingMaterial, colours, drawBoundries, drawTriangles, drawCenters);
+
+        return texture;
+    }
+
+
     private static void CreateDrawingMaterial()
     {
         if (drawingMaterial)
@@ -31,19 +41,10 @@ public static class MapTextureGenerator
         drawingMaterial.SetInt("_ZWrite", 0);
     }
 
-    public static Texture2D GenerateTexture(MapGraph map, int meshSize, int textureSize, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
-    {
-        CreateDrawingMaterial();
-        var texture = RenderGLToTexture(map, textureSize, meshSize, drawingMaterial, colours, drawBoundries, drawTriangles, drawCenters);
-
-        return texture;
-    }
-
     private static Texture2D RenderGLToTexture(MapGraph map, int textureSize, int meshSize, Material material, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
     {
         var renderTexture = CreateRenderTexture(textureSize, Color.white);
 
-        // render GL immediately to the active render texture //
         DrawToRenderTexture(map, material, textureSize, meshSize, colours, drawBoundries,drawTriangles, drawCenters);
 
         return CreateTextureFromRenderTexture(textureSize, renderTexture);
@@ -51,33 +52,26 @@ public static class MapTextureGenerator
 
     private static Texture2D CreateTextureFromRenderTexture(int textureSize, RenderTexture renderTexture)
     {
-        // read the active RenderTexture into a new Texture2D //
         Texture2D newTexture = new Texture2D(textureSize, textureSize);
         newTexture.ReadPixels(new Rect(0, 0, textureSize, textureSize), 0, 0);
 
-        // apply pixels and compress //
         bool applyMipsmaps = false;
+        bool highQuality   = true;
+
         newTexture.Apply(applyMipsmaps);
-        bool highQuality = true;
         newTexture.Compress(highQuality);
 
-        // clean up after the party //
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(renderTexture);
 
-        // return the goods //
         return newTexture;
     }
 
     private static RenderTexture CreateRenderTexture(int textureSize, Color color)
     {
-        // get a temporary RenderTexture //
         RenderTexture renderTexture = RenderTexture.GetTemporary(textureSize, textureSize);
+        RenderTexture.active        = renderTexture;
 
-        // set the RenderTexture as global target (that means GL too)
-        RenderTexture.active = renderTexture;
-
-        // clear GL //
         GL.Clear(false, true, color);
         GL.sRGBWrite = false;
         
@@ -97,7 +91,7 @@ public static class MapTextureGenerator
         {
             if (!coloursDictionary.ContainsKey(colour.type))
             {
-                coloursDictionary.Add(colour.type, colour.color);
+                coloursDictionary.Add(colour.type, colour.colour);
             }
         }
 
@@ -134,7 +128,7 @@ public static class MapTextureGenerator
             var end   = edge.GetEndPosition();
 
             GL.Vertex3(start.x, start.z, 0);
-            GL.Vertex3(end.x, end.z, 0);
+            GL.Vertex3(end.x,   end.z,   0);
         }
 
         GL.End();
@@ -176,7 +170,7 @@ public static class MapTextureGenerator
             var end   = edge.GetEndPosition();
 
             GL.Vertex3(start.x, start.z, 0);
-            GL.Vertex3(end.x, end.z, 0);
+            GL.Vertex3(end.x,   end.z,   0);
         }
 
         GL.End();
