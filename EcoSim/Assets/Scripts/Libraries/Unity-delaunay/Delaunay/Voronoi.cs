@@ -16,6 +16,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Delaunay.Geo;
+using Delaunay.Utils;
 using Delaunay.LR;
 
 namespace Delaunay
@@ -58,92 +59,22 @@ namespace Delaunay
 				_edges.Clear ();
 				_edges = null;
 			}
+//			_plotBounds = null;
 			_sitesIndexedByLocation = null;
 		}
 		
-        public Voronoi(List<Vector2> points, List<uint> colors, Rect plotBounds, int lloydIterations)
-        {
-            Init(points, colors, plotBounds);
-            LloydRelaxation(lloydIterations);
-        }
-
-        private void Init(List<Vector2> points, List<uint> colors, Rect plotBounds)
-        {
-            _sites = new SiteList();
-            _sitesIndexedByLocation = new Dictionary<Vector2, Site>(); // XXX: Used to be Dictionary(true) -- weak refs. 
-            AddSites(points, colors);
-            _plotBounds = plotBounds;
-            _triangles = new List<Triangle>();
-            _edges = new List<Edge>();
-            FortunesAlgorithm();
-        }
-
-        private void LloydRelaxation(int iterations)
-        {
-            // Reapeat the whole process for the number of iterations asked
-            for (int i = 0; i < iterations; i++)
-            {
-                List<Vector2> newPoints = new List<Vector2>();
-                // Go thourgh all sites
-                _sites.ResetSiteIndex();
-                Site site = _sites.Next();
-
-                while (site != null)
-                {
-                    // Loop all corners of the site to calculate the centroid
-                    List<Vector2> region = site.Region(plotBounds);
-                    if (region.Count < 1)
-                    {
-                        site = _sites.Next();
-                        continue;
-                    }
-
-                    Vector2 centroid = Vector2.zero;
-                    float signedArea = 0;
-                    float x0 = 0;
-                    float y0 = 0;
-                    float x1 = 0;
-                    float y1 = 0;
-                    float a = 0;
-                    // For all vertices except last
-                    for (int j = 0; j < region.Count - 1; j++)
-                    {
-                        x0 = region[j].x;
-                        y0 = region[j].y;
-                        x1 = region[j + 1].x;
-                        y1 = region[j + 1].y;
-                        a = x0 * y1 - x1 * y0;
-                        signedArea += a;
-                        centroid.x += (x0 + x1) * a;
-                        centroid.y += (y0 + y1) * a;
-                    }
-                    // Do last vertex
-                    x0 = region[region.Count - 1].x;
-                    y0 = region[region.Count - 1].y;
-                    x1 = region[0].x;
-                    y1 = region[0].y;
-                    a = x0 * y1 - x1 * y0;
-                    signedArea += a;
-                    centroid.x += (x0 + x1) * a;
-                    centroid.y += (y0 + y1) * a;
-
-                    signedArea *= 0.5f;
-                    centroid.x /= (6 * signedArea);
-                    centroid.y /= (6 * signedArea);
-                    // Move site to the centroid of its Voronoi cell
-                    newPoints.Add(centroid);
-                    site = _sites.Next();
-                }
-
-                // Between each replacement of the cendroid of the cell,
-                // we need to recompute Voronoi diagram:
-                Rect origPlotBounds = this.plotBounds;
-                Dispose();
-                Init(newPoints, null, origPlotBounds);
-            }
-        }
-
-        private void AddSites (List<Vector2> points, List<uint> colors)
+		public Voronoi (List<Vector2> points, List<uint> colors, Rect plotBounds)
+		{
+			_sites = new SiteList ();
+			_sitesIndexedByLocation = new Dictionary <Vector2,Site> (); // XXX: Used to be Dictionary(true) -- weak refs. 
+			AddSites (points, colors);
+			_plotBounds = plotBounds;
+			_triangles = new List<Triangle> ();
+			_edges = new List<Edge> ();
+			FortunesAlgorithm ();
+		}
+		
+		private void AddSites (List<Vector2> points, List<uint> colors)
 		{
 			int length = points.Count;
 			for (int i = 0; i < length; ++i) {
@@ -166,11 +97,111 @@ namespace Delaunay
 			return _edges;
 		}
           
+		public List<Vector2> Region (Vector2 p)
+		{
+			Site site = _sitesIndexedByLocation [p];
+			if (site == null) {
+				return new List<Vector2> ();
+			}
+			return site.Region (_plotBounds);
+		}
+
+		// TODO: bug: if you call this before you call region(), something goes wrong :(
+		public List<Vector2> NeighborSitesForSite (Vector2 coord)
+		{
+			List<Vector2> points = new List<Vector2> ();
+			Site site = _sitesIndexedByLocation [coord];
+			if (site == null) {
+				return points;
+			}
+			List<Site> sites = site.NeighborSites ();
+			Site neighbor;
+			for (int nIndex =0; nIndex<sites.Count; nIndex++) {
+				neighbor = sites [nIndex];
+				points.Add (neighbor.Coord);
+			}
+			return points;
+		}
+
+		public List<Circle> Circles ()
+		{
+			return _sites.Circles ();
+		}
+		
 		public List<LineSegment> VoronoiBoundaryForSite (Vector2 coord)
 		{
 			return DelaunayHelpers.VisibleLineSegments (DelaunayHelpers.SelectEdgesForSitePoint (coord, _edges));
 		}
 
+		public List<LineSegment> DelaunayLinesForSite (Vector2 coord)
+		{
+			return DelaunayHelpers.DelaunayLinesForEdges (DelaunayHelpers.SelectEdgesForSitePoint (coord, _edges));
+		}
+		
+		public List<LineSegment> VoronoiDiagram ()
+		{
+			return DelaunayHelpers.VisibleLineSegments (_edges);
+		}
+		
+		public List<LineSegment> DelaunayTriangulation (/*BitmapData keepOutMask = null*/)
+		{
+			return DelaunayHelpers.DelaunayLinesForEdges (DelaunayHelpers.SelectNonIntersectingEdges (/*keepOutMask,*/_edges));
+		}
+		
+		public List<LineSegment> Hull ()
+		{
+			return DelaunayHelpers.DelaunayLinesForEdges (HullEdges ());
+		}
+		
+		private List<Edge> HullEdges ()
+		{
+			return _edges.FindAll (delegate (Edge edge) {
+				return (edge.IsPartOfConvexHull ());
+			});
+		}
+
+		public List<Vector2> HullPointsInOrder ()
+		{
+			List<Edge> hullEdges = HullEdges ();
+			
+			List<Vector2> points = new List<Vector2> ();
+			if (hullEdges.Count == 0) {
+				return points;
+			}
+			
+			EdgeReorderer reorderer = new EdgeReorderer (hullEdges, VertexOrSite.SITE);
+			hullEdges = reorderer.edges;
+			List<Side> orientations = reorderer.edgeOrientations;
+			reorderer.Dispose ();
+			
+			Side orientation;
+
+			int n = hullEdges.Count;
+			for (int i = 0; i < n; ++i) {
+				Edge edge = hullEdges [i];
+				orientation = orientations [i];
+				points.Add (edge.Site (orientation).Coord);
+			}
+			return points;
+		}
+		
+		public List<LineSegment> SpanningTree (KruskalType type = KruskalType.MINIMUM/*, BitmapData keepOutMask = null*/)
+		{
+			List<Edge> edges = DelaunayHelpers.SelectNonIntersectingEdges (/*keepOutMask,*/_edges);
+			List<LineSegment> segments = DelaunayHelpers.DelaunayLinesForEdges (edges);
+			return DelaunayHelpers.Kruskal (segments, type);
+		}
+
+		public List<List<Vector2>> Regions ()
+		{
+			return _sites.Regions (_plotBounds);
+		}
+		
+		public List<uint> SiteColors (/*BitmapData referenceImage = null*/)
+		{
+			return _sites.SiteColors (/*referenceImage*/);
+		}
+		
 		/**
 		 * 
 		 * @param proximityMap a BitmapData whose regions are filled with the site index values; see PlanePointsCanvas::fillRegions()

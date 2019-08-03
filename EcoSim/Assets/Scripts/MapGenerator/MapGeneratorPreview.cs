@@ -7,23 +7,23 @@ public class MapGeneratorPreview : MonoBehaviour
 {
     [Header("Settings")]
     public HeightMapSettings heightMapSettings;
-    public MeshSettings      terrainMeshSettings;
-    public int seed = 0;
+    public int meshSize = 200;
+    public int seed     = 0;
 
     [Header("Texture Settings")]
-    public int textureSize = 512;
+    public int  textureSize = 512;
     public bool drawNodeBoundries;
     public bool drawDelauneyTriangles;
     public bool drawNodeCenters;
     public List<MapNodeTypeColor> colours;
 
     [Header("Voronoi Generation")]
-    public int pointSpacing = 10;
+    public int pointSpacing         = 10;
     public int relaxationIterations = 1;
-    public float snapDistance = 0;
+    public float snapDistance       = 0;
 
     [Header("Outputs")]
-    public MeshFilter meshFilter;
+    public MeshFilter   meshFilter;
     public MeshRenderer meshRenderer;
     public MeshCollider meshCollider;
 
@@ -32,6 +32,7 @@ public class MapGeneratorPreview : MonoBehaviour
     {
         StartCoroutine(GenerateMapAsync());
     }
+
 
     public IEnumerator GenerateMapAsync()
     {
@@ -44,10 +45,8 @@ public class MapGeneratorPreview : MonoBehaviour
         var startTime = DateTime.Now;
         var points    = GetPoints();
 
-        int meshSize  = terrainMeshSettings.meshSize;
-
         var time    = DateTime.Now;
-        var voronoi = new Delaunay.Voronoi(points, null, new Rect(0, 0, meshSize, meshSize), relaxationIterations);
+        var voronoi = new Delaunay.Voronoi(points, null, new Rect(0, 0, meshSize, meshSize));
         Debug.Log(string.Format("Voronoi Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         time = DateTime.Now;
@@ -76,39 +75,6 @@ public class MapGeneratorPreview : MonoBehaviour
         Debug.Log(string.Format("Finished Generating World: {0:n0}ms with {1} nodes", DateTime.Now.Subtract(startTime).TotalMilliseconds, mapGraph.nodesByCenterPosition.Count));
     }
 
-    private List<Vector2> GetPoints()
-    {
-        var points = new List<Vector2>();
-
-        for (int x = pointSpacing; x < terrainMeshSettings.meshSize; x += pointSpacing)
-        {
-            bool even = false;
-            for (int y = pointSpacing; y < terrainMeshSettings.meshSize; y += pointSpacing)
-            {
-                var newX = even ? x : x - (pointSpacing / 2f);
-                points.Add(new Vector2(newX, y));
-                even = !even;
-            }
-        }
-
-        return points;
-    }
-
-    private void OnValuesUpdated()
-    {
-        GenerateMap();
-    }
-
-    private void UpdateTexture(Texture2D texture)
-    {
-        meshRenderer.sharedMaterial.mainTexture = texture;
-    }
-
-    private void OnMeshDataReceived(object result)
-    {
-        UpdateMesh(result as MeshData);
-    }
-
     public void UpdateMesh(MeshData meshData)
     {
         var mesh = new Mesh
@@ -122,5 +88,34 @@ public class MapGeneratorPreview : MonoBehaviour
 
         meshFilter.sharedMesh   = mesh;
         meshCollider.sharedMesh = mesh;
+    }
+
+
+    private List<Vector2> GetPoints()
+    {
+        var points = new List<Vector2>();
+
+        for (int x = pointSpacing; x < meshSize; x += pointSpacing)
+        {
+            bool even = false;
+            for (int y = pointSpacing; y < meshSize; y += pointSpacing)
+            {
+                var newX = even ? x : x - (pointSpacing / 2f);
+                points.Add(new Vector2(newX, y));
+                even = !even;
+            }
+        }
+
+        return points;
+    }
+
+    private void UpdateTexture(Texture2D texture)
+    {
+        meshRenderer.sharedMaterial.mainTexture = texture;
+    }
+
+    private void OnMeshDataReceived(object result)
+    {
+        UpdateMesh(result as MeshData);
     }
 }
