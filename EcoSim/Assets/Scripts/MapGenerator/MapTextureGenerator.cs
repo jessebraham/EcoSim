@@ -111,7 +111,7 @@ public static class MapTextureGenerator
 
         if (drawTriangles)
         {
-            DrawDelauneyEdges(map, Color.red);
+            DrawDelaunayEdges(map, Color.red);
         }
 
         GL.PopMatrix();
@@ -134,7 +134,7 @@ public static class MapTextureGenerator
         GL.End();
     }
 
-    private static void DrawDelauneyEdges(MapGraph map, Color color)
+    private static void DrawDelaunayEdges(MapGraph map, Color color)
     {
         GL.Begin(GL.LINES);
         GL.Color(color);

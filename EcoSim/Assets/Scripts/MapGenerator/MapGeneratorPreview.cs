@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +14,7 @@ public class MapGeneratorPreview : MonoBehaviour
     public int  textureSize = 512;
     [Space(10)]
     public bool drawNodeBoundries;
-    public bool drawDelauneyTriangles;
+    public bool drawDelaunayTriangles;
     public bool drawNodeCenters;
     [Space(10)]
     public List<MapNodeTypeColor> colours;
@@ -89,7 +89,7 @@ public class MapGeneratorPreview : MonoBehaviour
         Debug.Log(string.Format("Mesh Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         time = DateTime.Now;
-        var texture = MapTextureGenerator.GenerateTexture(mapGraph, meshSize, textureSize, colours, drawNodeBoundries, drawDelauneyTriangles, drawNodeCenters);
+        var texture = MapTextureGenerator.GenerateTexture(mapGraph, meshSize, textureSize, colours, drawNodeBoundries, drawDelaunayTriangles, drawNodeCenters);
         Debug.Log(string.Format("Texture Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         UpdateTexture(texture);

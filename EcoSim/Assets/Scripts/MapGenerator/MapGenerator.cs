@@ -9,14 +9,13 @@ public static class MapGenerator
         SetNodesToGrass(graph);
 
         SetLowNodesToWater(graph, 0.4f);
-        SetEdgesToWater(graph);
         FillOcean(graph);
 
         SetBeaches(graph);
         FindRivers(graph, 12f);
         CreateLakes(graph);
 
-        AddMountains(graph, 5f, 5f, 8f, 6.5f, 15f);
+        AddMountains(graph, 4.5f, 5f, 8f, 6.5f, 13f);
         AddTallGrass(graph, 2f, 2.5f);
 
         AverageCenterPoints(graph);
@@ -54,17 +53,6 @@ public static class MapGenerator
             }
 
             if (allZero)
-            {
-                node.nodeType = MapGraph.MapNodeType.FreshWater;
-            }
-        }
-    }
-
-    private static void SetEdgesToWater(MapGraph graph)
-    {
-        foreach (var node in graph.nodesByCenterPosition.Values)
-        {
-            if (node.IsEdge())
             {
                 node.nodeType = MapGraph.MapNodeType.FreshWater;
             }
