@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,20 +12,42 @@ public class MapGeneratorPreview : MonoBehaviour
 
     [Header("Texture Settings")]
     public int  textureSize = 512;
+    [Space(10)]
     public bool drawNodeBoundries;
     public bool drawDelauneyTriangles;
     public bool drawNodeCenters;
+    [Space(10)]
     public List<MapNodeTypeColor> colours;
 
     [Header("Voronoi Generation")]
     public int pointSpacing         = 10;
-    public int relaxationIterations = 1;
     public float snapDistance       = 0;
 
     [Header("Outputs")]
     public MeshFilter   meshFilter;
     public MeshRenderer meshRenderer;
     public MeshCollider meshCollider;
+
+    [Header("Environment")]
+    public MeshRenderer coniferousTreePrefab;
+    public MeshRenderer deciduousTreePrefab;
+    public MeshRenderer rockPrefab;
+    [Space(10)]
+    [Range(0, 1)]
+    public float coniferousProbability = 0.1f;
+    [Range(0, 1)]
+    public float deciduousProbability = 0.1f;
+    [Range(0, 1)]
+    public float treeScale = 1.0f;
+    [Range(0, 1)]
+    public float treeScaleDeviation = 0.25f;
+    [Space(10)]
+    [Range(0, 2)]
+    public float rockProbability = 0.1f;
+    [Range(0, 1)]
+    public float rockScale = 1.0f;
+    [Range(0, 2)]
+    public float rockScaleDeviation = 0.25f;
 
 
     public void Start()
@@ -71,6 +93,12 @@ public class MapGeneratorPreview : MonoBehaviour
         Debug.Log(string.Format("Texture Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         UpdateTexture(texture);
+
+        time = DateTime.Now;
+        Environment.Init(mapGraph, GameObject.Find("Environment").transform, seed);
+        Environment.SpawnTrees(coniferousTreePrefab, deciduousTreePrefab, coniferousProbability, deciduousProbability, treeScale, treeScaleDeviation);
+        Environment.SpawnRocks(rockPrefab, rockProbability, rockScale, rockScaleDeviation);
+        Debug.Log(string.Format("Environment Spawned: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         Debug.Log(string.Format("Finished Generating World: {0:n0}ms with {1} nodes", DateTime.Now.Subtract(startTime).TotalMilliseconds, mapGraph.nodesByCenterPosition.Count));
     }

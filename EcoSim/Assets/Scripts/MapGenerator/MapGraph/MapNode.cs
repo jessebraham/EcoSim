@@ -13,6 +13,8 @@ public partial class MapGraph
 
         public MapNodeType nodeType;
 
+        public bool occupied = false;
+
 
         public IEnumerable<MapNodeHalfEdge> GetEdges()
         {
