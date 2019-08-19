@@ -6,31 +6,29 @@ public static class Environment
 {
     private static readonly float maxRotation = 4f;
 
-    private static Transform container;
+    private static EnvironmentSettings settings;
+
     private static MapGraph mapGraph;
+    private static Transform container;
     private static Vector3 mapCenter;
     private static System.Random prng;
 
 
-    public static void Init(MapGraph mapGraph, Transform container, int seed)
+    public static void Init(EnvironmentSettings settings, MapGraph mapGraph, int seed)
     {
+        Environment.settings  = settings;
         Environment.mapGraph  = mapGraph;
-        Environment.container = container;
+        Environment.container = GameObject.Find("Environment").transform;
 
         mapCenter = mapGraph.GetCenter();
         prng      = new System.Random(seed);
 
         ClearGameObjects();
+        SpawnTrees();
+        SpawnRocks();
     }
 
-    public static void SpawnTrees(
-        MeshRenderer coniferousPrefab,
-        MeshRenderer deciduousPrefab,
-        float coniferousProbability,
-        float deciduousProbability,
-        float scale,
-        float scaleDeviation
-    )
+    public static void SpawnTrees()
     {
         // Trees will only spawn on grass type nodes.
         var nodeTypes = new MapGraph.MapNodeType[]
@@ -55,8 +53,8 @@ public static class Environment
             // spawn on TallGrass.
             if (node.nodeType == MapGraph.MapNodeType.Grass)
             {
-                probability = deciduousProbability;
-                treePrefab  = deciduousPrefab;
+                probability = settings.deciduousProbability;
+                treePrefab  = settings.deciduousTreePrefab;
             }
             else
             {
@@ -68,23 +66,18 @@ public static class Environment
                     continue;
                 }
 
-                probability = coniferousProbability;
-                treePrefab  = coniferousPrefab;
+                probability = settings.coniferousProbability;
+                treePrefab  = settings.coniferousTreePrefab;
             }
 
             if (prng.NextDouble() < probability)
             {
-                SpawnPrefab(node, treePrefab, scale, scaleDeviation);
+                SpawnPrefab(node, treePrefab, settings.treeScale, settings.treeScaleDeviation);
             }
         }
     }
 
-    public static void SpawnRocks(
-        MeshRenderer rockPrefab,
-        float probability,
-        float scale,
-        float scaleDeviation
-    )
+    public static void SpawnRocks()
     {
         // Trees will only spawn on grass or rocky type nodes.
         var nodeTypes = new MapGraph.MapNodeType[]
@@ -103,9 +96,9 @@ public static class Environment
                 continue;
             }
 
-            if (prng.NextDouble() < probability)
+            if (prng.NextDouble() < settings.rockProbability)
             {
-                SpawnPrefab(node, rockPrefab, scale, scaleDeviation);
+                SpawnPrefab(node, settings.rockPrefab, settings.rockScale, settings.rockScaleDeviation);
             }
         }
     }

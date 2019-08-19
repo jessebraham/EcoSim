@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3206e57ae6003e45bae5c3e04044b3f, type: 3}
+  m_Name: EnvironmentSettings
+  m_EditorClassIdentifier: 
+  coniferousTreePrefab: {fileID: 2323336, guid: 8ed1fa325ca228645ad26dd6eff14768,
+    type: 3}
+  deciduousTreePrefab: {fileID: 2336884, guid: 7c5aafe3fe2c6ef4a9150f7f44653760, type: 3}
+  rockPrefab: {fileID: 2380810, guid: 5578b82f17c954843901e8b68ca21dcc, type: 3}
+  coniferousProbability: 0.6
+  deciduousProbability: 0.25
+  treeScale: 0.15
+  treeScaleDeviation: 0.25
+  rockProbability: 0.08
+  rockScale: 0.35
+  rockScaleDeviation: 0.8
