@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 public partial class MapGraph
 {
@@ -39,9 +41,25 @@ public partial class MapGraph
             return angle;
         }
 
-        public override string ToString()
+        public MapGraph.MapNodeHalfEdge GetDownSlopeEdge(List<MapGraph.MapNodeHalfEdge> seenEdges)
         {
-            return "HalfEdge: " + previous.destination.position  + " -> " + destination.position;
+            var candidates = destination.GetEdges().Where(x =>
+                x.destination.position.y < destination.position.y
+                && !seenEdges.Contains(x)
+                && x.opposite != null && !seenEdges.Contains(x.opposite)
+                && x.node.nodeType != MapGraph.MapNodeType.FreshWater
+                && x.opposite.node.nodeType != MapGraph.MapNodeType.FreshWater);
+
+            // Make sure the river prefers to follow existing rivers
+            var existingRiverEdge = candidates.FirstOrDefault(x => x.water > 0);
+            if (existingRiverEdge != null)
+            {
+                return existingRiverEdge;
+            }
+
+            return candidates
+                .OrderByDescending(x => x.GetSlopeAngle())
+                .FirstOrDefault();
         }
     }
 }

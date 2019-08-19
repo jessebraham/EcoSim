@@ -84,6 +84,16 @@ public partial class MapGraph
             return heightDifference.Value;
         }
 
+        public void SetNodeHeightToCornerHeight(MapGraph.MapPoint targetCorner)
+        {
+            foreach (var corner in GetCorners())
+            {
+                corner.position = new Vector3(corner.position.x, targetCorner.position.y, corner.position.z);
+            }
+
+            centerPoint = new Vector3(centerPoint.x, targetCorner.position.y, centerPoint.z);
+        }
+
         internal MapPoint GetLowestCorner()
         {
             return GetCorners()

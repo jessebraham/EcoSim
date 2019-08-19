@@ -18,7 +18,11 @@ public static class MapGenerator
         AddMountains(graph, 4.5f, 5f, 8f, 6.5f, 13f);
         AddTallGrass(graph, 2f, 2.5f);
 
-        AverageCenterPoints(graph);
+        // Average the center points
+        foreach (var node in graph.nodesByCenterPosition.Values)
+        {
+            node.centerPoint = new Vector3(node.centerPoint.x, node.GetCorners().Average(x => x.position.y), node.centerPoint.z);
+        }
     }
 
 
@@ -175,7 +179,7 @@ public static class MapGenerator
                     break;
                 }
 
-                nextEdge = GetDownSlopeEdge(currentEdge, riverEdges);
+                nextEdge = currentEdge.GetDownSlopeEdge(riverEdges);
 
                 if (nextEdge == null
                     && previousEdge != null)
@@ -201,7 +205,8 @@ public static class MapGenerator
                     {
                         if (nextEdge.previous.destination.position.y != nextEdge.destination.position.y)
                         {
-                            LevelEdge(nextEdge);
+                            // Level the edge
+                            nextEdge.destination.position = new Vector3(nextEdge.destination.position.x, nextEdge.previous.destination.position.y, nextEdge.destination.position.z);
                             heightUpdated = true;
                         }
                     }
@@ -235,29 +240,6 @@ public static class MapGenerator
                 previousRiverEdges = riverEdges;
             }
         } while (heightUpdated);
-    }
-
-    private static MapGraph.MapNodeHalfEdge GetDownSlopeEdge(MapGraph.MapNodeHalfEdge source, List<MapGraph.MapNodeHalfEdge> seenEdges)
-    {
-        var corner = source.destination;
-
-        var candidates = corner.GetEdges().Where(x =>
-            x.destination.position.y < corner.position.y
-            && !seenEdges.Contains(x)
-            && x.opposite != null && !seenEdges.Contains(x.opposite)
-            && x.node.nodeType != MapGraph.MapNodeType.FreshWater
-            && x.opposite.node.nodeType != MapGraph.MapNodeType.FreshWater);
-
-        // Make sure the river prefers to follow existing rivers
-        var existingRiverEdge = candidates.FirstOrDefault(x => x.water > 0);
-        if (existingRiverEdge != null)
-        {
-            return existingRiverEdge;
-        }
-
-        return candidates
-            .OrderByDescending(x => x.GetSlopeAngle())
-            .FirstOrDefault();
     }
 
     private static MapGraph.MapNodeHalfEdge GetNewCandidateEdge(
@@ -300,11 +282,6 @@ public static class MapGenerator
         return edges.OrderBy(x => x.destination.position.y).FirstOrDefault();
     }
 
-    private static void LevelEdge(MapGraph.MapNodeHalfEdge currentEdge)
-    {
-        currentEdge.destination.position = new Vector3(currentEdge.destination.position.x, currentEdge.previous.destination.position.y, currentEdge.destination.position.z);
-    }
-
     private static void CreateLakes(MapGraph graph)
     {
         foreach (var node in graph.nodesByCenterPosition.Values)
@@ -317,19 +294,9 @@ public static class MapGenerator
                 node.nodeType    = MapGraph.MapNodeType.FreshWater;
 
                 // Set all of the heights equal to where the water came in.
-                SetNodeHeightToCornerHeight(node, lowestCorner);
+                node.SetNodeHeightToCornerHeight(lowestCorner);
             }
         }
-    }
-
-    private static void SetNodeHeightToCornerHeight(MapGraph.MapNode node, MapGraph.MapPoint targetCorner)
-    {
-        foreach (var corner in node.GetCorners())
-        {
-            corner.position = new Vector3(corner.position.x, targetCorner.position.y, corner.position.z);
-        }
-
-        node.centerPoint = new Vector3(node.centerPoint.x, targetCorner.position.y, node.centerPoint.z);
     }
 
     private static void AddMountains(
@@ -383,13 +350,5 @@ public static class MapGenerator
                 }
             }
         }        
-    }
-
-    private static void AverageCenterPoints(MapGraph graph)
-    {
-        foreach (var node in graph.nodesByCenterPosition.Values)
-        {
-            node.centerPoint = new Vector3(node.centerPoint.x, node.GetCorners().Average(x => x.position.y), node.centerPoint.z);
-        }
     }
 }
