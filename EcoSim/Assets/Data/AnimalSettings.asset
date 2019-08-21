@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8fbbf1f383afd24c9d96443276ffbc7, type: 3}
+  m_Name: AnimalSettings
+  m_EditorClassIdentifier: 
+  speciesSettings:
+  - prefab: {fileID: 5848880518004222460, guid: aa2d47f95b34fbe4d9cbe095f13585b5,
+      type: 3}
+    minStartingPopulation: 10
+    maxStartingPopulation: 20
+    baseHealthPoints: 5
+    baseMovementSpeed: 5
+    runSpeedMultiplier: 2
+    swimSpeedMultiplier: 0.5
+  - prefab: {fileID: 6999963590188818987, guid: aa3784adb6428184e991be2d60ee0cb2,
+      type: 3}
+    minStartingPopulation: 10
+    maxStartingPopulation: 30
+    baseHealthPoints: 3
+    baseMovementSpeed: 2
+    runSpeedMultiplier: 1.5
+    swimSpeedMultiplier: 0.25
+  - prefab: {fileID: 1946311863909802260, guid: 7451ef01e53127446b9d7406220542f6,
+      type: 3}
+    minStartingPopulation: 10
+    maxStartingPopulation: 20
+    baseHealthPoints: 10
+    baseMovementSpeed: 5
+    runSpeedMultiplier: 2
+    swimSpeedMultiplier: 0.5
+  - prefab: {fileID: 3429995843008497618, guid: d2edcf95960b81249bf3f4a30ad1a908,
+      type: 3}
+    minStartingPopulation: 5
+    maxStartingPopulation: 15
+    baseHealthPoints: 20
+    baseMovementSpeed: 6
+    runSpeedMultiplier: 3
+    swimSpeedMultiplier: 0.5
+  - prefab: {fileID: 1893356797286406559, guid: 2884e6b071e1c2a4faef2e7fd67b481e,
+      type: 3}
+    minStartingPopulation: 10
+    maxStartingPopulation: 30
+    baseHealthPoints: 4
+    baseMovementSpeed: 2
+    runSpeedMultiplier: 1.5
+    swimSpeedMultiplier: 2

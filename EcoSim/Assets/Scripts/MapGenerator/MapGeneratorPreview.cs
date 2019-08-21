@@ -6,8 +6,9 @@ using UnityEngine;
 public class MapGeneratorPreview : MonoBehaviour
 {
     [Header("Settings")]
+    public AnimalSettings      animalSettings;
     public EnvironmentSettings environmentSettings;
-    public HeightMapSettings heightMapSettings;
+    public HeightMapSettings   heightMapSettings;
     public int meshSize = 200;
     public int seed     = 0;
 
@@ -21,8 +22,8 @@ public class MapGeneratorPreview : MonoBehaviour
     public List<MapNodeTypeColor> colours;
 
     [Header("Voronoi Generation")]
-    public int pointSpacing         = 10;
-    public float snapDistance       = 0;
+    public int pointSpacing   = 10;
+    public float snapDistance = 0;
 
     [Header("Outputs")]
     public MeshFilter   meshFilter;
@@ -75,8 +76,12 @@ public class MapGeneratorPreview : MonoBehaviour
         UpdateTexture(texture);
 
         time = DateTime.Now;
-        Environment.Init(environmentSettings, mapGraph, seed);
+        EnvironmentSpawner.Spawn(environmentSettings, GameObject.Find("Environment").transform, mapGraph, seed);
         Debug.Log(string.Format("Environment Spawned: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
+
+        time = DateTime.Now;
+        AnimalSpawner.Spawn(animalSettings, GameObject.Find("Animals").transform, mapGraph, seed);
+        Debug.Log(string.Format("Animals Spawned: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         Debug.Log(string.Format("Finished Generating World: {0:n0}ms with {1} nodes", DateTime.Now.Subtract(startTime).TotalMilliseconds, mapGraph.nodesByCenterPosition.Count));
     }
