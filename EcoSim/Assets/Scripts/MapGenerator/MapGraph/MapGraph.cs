@@ -7,7 +7,7 @@ using UnityEngine;
 
 public partial class MapGraph
 {
-    public enum MapNodeType
+    public enum NodeType
     {
         SaltWater,
         FreshWater,
@@ -16,23 +16,36 @@ public partial class MapGraph
         TallGrass,
         Rocky,
         Mountain,
-        Snow
+        Snow,
+    }
+
+    [Serializable]
+    public class NodeTypeColour
+    {
+        public NodeType type;
+        public Color    colour;
     }
 
 
-    public Rect plotBounds;
+    public Rect                        plotBounds;
+    public List<Edge>                  edges;
+    public Dictionary<Vector3, Vertex> vertices;
+    public Dictionary<Vector3, Node>   nodesByCenterPosition;
 
-    public Dictionary<Vector3, MapPoint> points;
-    public Dictionary<Vector3, MapNode>  nodesByCenterPosition;
-
-    public List<MapNodeHalfEdge> edges;
+    public Vector3 center
+    {
+        get
+        {
+            return ToVector3(plotBounds.center);
+        }
+    }
 
 
     public MapGraph(Voronoi voronoi, HeightMap heightMap, float snapDistance)
     {     
         CreateFromVoronoi(voronoi);
 
-        if (snapDistance > 0)
+        if (snapDistance > 0f)
         {
             SnapPoints(snapDistance);
         }
@@ -41,32 +54,34 @@ public partial class MapGraph
     }
 
 
-    internal Vector3 GetCenter()
+    public IEnumerable<Node> FilterNodes(IEnumerable<NodeType> types)
     {
-        return ToVector3(plotBounds.center);
+        return nodesByCenterPosition.Values
+            .Where(node => types.Contains(node.nodeType)
+                           && !node.occupied);
     }
 
 
     private void CreateFromVoronoi(Voronoi voronoi)
     {
-        points = new Dictionary<Vector3, MapPoint>();
+        vertices = new Dictionary<Vector3, Vertex>();
 
-        nodesByCenterPosition    = new Dictionary<Vector3, MapNode>();
-        var edgesByStartPosition = new Dictionary<Vector3, List<MapNodeHalfEdge>>();
+        nodesByCenterPosition    = new Dictionary<Vector3, Node>();
+        var edgesByStartPosition = new Dictionary<Vector3, List<Edge>>();
 
-        edges = new List<MapNodeHalfEdge>();
+        edges = new List<Edge>();
 
         plotBounds = voronoi.plotBounds;
 
-        var bottomLeftSite  = voronoi.NearestSitePoint(voronoi.plotBounds.xMin, voronoi.plotBounds.yMin);
-        var bottomRightSite = voronoi.NearestSitePoint(voronoi.plotBounds.xMax, voronoi.plotBounds.yMin);
-        var topLeftSite     = voronoi.NearestSitePoint(voronoi.plotBounds.xMin, voronoi.plotBounds.yMax);
-        var topRightSite    = voronoi.NearestSitePoint(voronoi.plotBounds.xMax, voronoi.plotBounds.yMax);
+        var bottomLeftSite  = voronoi.NearestSitePoint(plotBounds.xMin, plotBounds.yMin);
+        var bottomRightSite = voronoi.NearestSitePoint(plotBounds.xMax, plotBounds.yMin);
+        var topLeftSite     = voronoi.NearestSitePoint(plotBounds.xMin, plotBounds.yMax);
+        var topRightSite    = voronoi.NearestSitePoint(plotBounds.xMax, plotBounds.yMax);
 
-        var topLeft     = new Vector3(voronoi.plotBounds.xMin, 0, voronoi.plotBounds.yMax);
-        var topRight    = new Vector3(voronoi.plotBounds.xMax, 0, voronoi.plotBounds.yMax);
-        var bottomLeft  = new Vector3(voronoi.plotBounds.xMin, 0, voronoi.plotBounds.yMin);
-        var bottomRight = new Vector3(voronoi.plotBounds.xMax, 0, voronoi.plotBounds.yMin);
+        var topLeft     = new Vector3(plotBounds.xMin, 0, plotBounds.yMax);
+        var topRight    = new Vector3(plotBounds.xMax, 0, plotBounds.yMax);
+        var bottomLeft  = new Vector3(plotBounds.xMin, 0, plotBounds.yMin);
+        var bottomRight = new Vector3(plotBounds.xMax, 0, plotBounds.yMin);
 
         var siteEdges = new Dictionary<Vector2, List<LineSegment>>();
 
@@ -115,12 +130,12 @@ public partial class MapGraph
         {
             var boundries   = GetBoundriesForSite(siteEdges, site);
             var center      = ToVector3(site);
-            var currentNode = new MapNode { centerPoint = center };
+            var currentNode = new Node { centerPoint = center };
 
             nodesByCenterPosition.Add(center, currentNode);
 
-            MapNodeHalfEdge firstEdge    = null;
-            MapNodeHalfEdge previousEdge = null;
+            Edge firstEdge    = null;
+            Edge previousEdge = null;
 
             for (var i = 0; i < boundries.Count; i++)
             {
@@ -217,30 +232,30 @@ public partial class MapGraph
 
     private void SnapPoints(float snapDistance)
     {
-        var keys = points.Keys.ToList();
+        var keys = vertices.Keys.ToList();
 
         foreach (var key in keys)
         {
             // We have to check to see if it hasn't been deleted by an earlier snap
-            if (!points.ContainsKey(key))
+            if (!vertices.ContainsKey(key))
             {
                 continue;
             }
 
-            var point     = points[key];
-            var neighbors = point.GetEdges();
+            var vertex    = vertices[key];
+            var neighbors = vertex.GetEdges();
 
             foreach (var neighbor in neighbors)
             {
-                if (snapDistance > Vector3.Distance(point.position, neighbor.destination.position))
+                if (snapDistance > Vector3.Distance(vertex.position, neighbor.destination.position))
                 {
-                    SnapPoints(point, neighbor);
+                    SnapPoints(vertex, neighbor);
                 }
             }
         }
     }
 
-    private void SnapPoints(MapPoint point, MapNodeHalfEdge edge)
+    private void SnapPoints(Vertex point, Edge edge)
     {
         // Don't snap if the neighboring nodes already have three edges
         if (edge.node.GetEdges().Count() <= 3
@@ -261,7 +276,7 @@ public partial class MapGraph
         edges.Remove(edge);
 
         // Delete the other point
-        points.Remove(new Vector3(edge.destination.position.x, 0, edge.destination.position.z));
+        vertices.Remove(new Vector3(edge.destination.position.x, 0, edge.destination.position.z));
 
         var otherEdges = edge.destination.GetEdges().ToList();
 
@@ -280,8 +295,7 @@ public partial class MapGraph
         edge.previous.next = edge.next;
 
         // Update the opposite edge as well
-        if (edge.opposite != null
-            && edge.opposite.node.GetEdges().Count() > 3)
+        if (edge.opposite?.node.GetEdges().Count() > 3)
         {
             // Delete edge
             edges.Remove(edge.opposite);
@@ -311,13 +325,14 @@ public partial class MapGraph
         {
             node.centerPoint = UpdateHeight(heightmap, node.centerPoint);
         }
-        foreach (var point in points.Values)
+
+        foreach (var point in vertices.Values)
         {
             point.position = UpdateHeight(heightmap, point.position);
         }
     }
 
-    private static void AddLeavingEdge(MapNodeHalfEdge edge)
+    private static void AddLeavingEdge(Edge edge)
     {
         if (edge.previous.destination.leavingEdge == null)
         {
@@ -368,6 +383,7 @@ public partial class MapGraph
                 {
                     previous = boundries.Count - 1;
                 }
+
                 if (next >= boundries.Count)
                 {
                     next = 0;
@@ -385,7 +401,7 @@ public partial class MapGraph
         return boundries;
     }
 
-    private void ConnectOpposites(Dictionary<Vector3, List<MapNodeHalfEdge>> edgesByStartPosition)
+    private void ConnectOpposites(Dictionary<Vector3, List<Edge>> edgesByStartPosition)
     {
         foreach (var edge in edges)
         {
@@ -401,7 +417,7 @@ public partial class MapGraph
             {
                 var list = edgesByStartPosition[endEdgePosition];
 
-                MapNodeHalfEdge opposite = null;
+                Edge opposite = null;
                 foreach (var item in list)
                 {
                     // We use 0.5f to snap the coordinates to each other,
@@ -460,29 +476,36 @@ public partial class MapGraph
         return newSegments;
     }
 
-    private MapNodeHalfEdge AddEdge(Dictionary<Vector3, List<MapNodeHalfEdge>> edgesByStartPosition, MapNodeHalfEdge previous, Vector3 start, Vector3 end, MapNode node)
+    private Edge AddEdge(
+        Dictionary<Vector3, List<Edge>> edgesByStartPosition,
+        Edge previous,
+        Vector3 start,
+        Vector3 end,
+        Node node
+    )
     {
         if (start == end)
         {
             Debug.Assert(start != end, "Start and end vectors must not be the same");
         }
 
-        var currentEdge = new MapNodeHalfEdge { node = node };
+        var currentEdge = new Edge { node = node };
 
-        if (!points.ContainsKey(start))
+        if (!vertices.ContainsKey(start))
         {
-            points.Add(start, new MapPoint { position = start, leavingEdge = currentEdge });
-        }
-        if (!points.ContainsKey(end))
-        {
-            points.Add(end, new MapPoint { position = end });
+            vertices.Add(start, new Vertex { position = start, leavingEdge = currentEdge });
         }
 
-        currentEdge.destination = points[end];
+        if (!vertices.ContainsKey(end))
+        {
+            vertices.Add(end, new Vertex { position = end });
+        }
+
+        currentEdge.destination = vertices[end];
 
         if (!edgesByStartPosition.ContainsKey(start))
         {
-            edgesByStartPosition.Add(start, new List<MapNodeHalfEdge>());
+            edgesByStartPosition.Add(start, new List<Edge>());
         }
 
         edgesByStartPosition[start].Add(currentEdge);

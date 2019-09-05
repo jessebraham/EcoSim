@@ -9,6 +9,7 @@ public class MapGeneratorPreview : MonoBehaviour
     public AnimalSettings      animalSettings;
     public EnvironmentSettings environmentSettings;
     public HeightMapSettings   heightMapSettings;
+    [Space(10)]
     public int meshSize = 200;
     public int seed     = 0;
 
@@ -17,9 +18,8 @@ public class MapGeneratorPreview : MonoBehaviour
     [Space(10)]
     public bool drawNodeBoundries;
     public bool drawDelaunayTriangles;
-    public bool drawNodeCenters;
     [Space(10)]
-    public List<MapNodeTypeColor> colours;
+    public List<MapGraph.NodeTypeColour> colours;
 
     [Header("Voronoi Generation")]
     public int pointSpacing   = 10;
@@ -70,17 +70,17 @@ public class MapGeneratorPreview : MonoBehaviour
         Debug.Log(string.Format("Mesh Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         time = DateTime.Now;
-        var texture = MapTextureGenerator.GenerateTexture(mapGraph, meshSize, textureSize, colours, drawNodeBoundries, drawDelaunayTriangles, drawNodeCenters);
+        var texture = MapTextureGenerator.GenerateTexture(mapGraph, meshSize, textureSize, colours, drawNodeBoundries, drawDelaunayTriangles);
         Debug.Log(string.Format("Texture Generated: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         UpdateTexture(texture);
 
         time = DateTime.Now;
-        EnvironmentSpawner.Spawn(environmentSettings, GameObject.Find("Environment").transform, mapGraph, seed);
+        EnvironmentSpawner.Spawn(mapGraph, GameObject.Find("Environment").transform, environmentSettings, seed);
         Debug.Log(string.Format("Environment Spawned: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         time = DateTime.Now;
-        AnimalSpawner.Spawn(animalSettings, GameObject.Find("Animals").transform, mapGraph, seed);
+        AnimalSpawner.Spawn(mapGraph, GameObject.Find("Animals").transform, animalSettings, seed);
         Debug.Log(string.Format("Animals Spawned: {0:n0}ms", DateTime.Now.Subtract(time).TotalMilliseconds));
 
         Debug.Log(string.Format("Finished Generating World: {0:n0}ms with {1} nodes", DateTime.Now.Subtract(startTime).TotalMilliseconds, mapGraph.nodesByCenterPosition.Count));

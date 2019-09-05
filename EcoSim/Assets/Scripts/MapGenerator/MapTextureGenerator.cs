@@ -6,10 +6,10 @@ public static class MapTextureGenerator
     private static Material drawingMaterial;
 
 
-    public static Texture2D GenerateTexture(MapGraph map, int meshSize, int textureSize, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
+    public static Texture2D GenerateTexture(MapGraph map, int meshSize, int textureSize, List<MapGraph.NodeTypeColour> colours, bool drawBoundries, bool drawTriangles)
     {
         CreateDrawingMaterial();
-        var texture = RenderGLToTexture(map, textureSize, meshSize, drawingMaterial, colours, drawBoundries, drawTriangles, drawCenters);
+        var texture = RenderGLToTexture(map, textureSize, meshSize, drawingMaterial, colours, drawBoundries, drawTriangles);
 
         return texture;
     }
@@ -41,11 +41,11 @@ public static class MapTextureGenerator
         drawingMaterial.SetInt("_ZWrite", 0);
     }
 
-    private static Texture2D RenderGLToTexture(MapGraph map, int textureSize, int meshSize, Material material, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
+    private static Texture2D RenderGLToTexture(MapGraph map, int textureSize, int meshSize, Material material, List<MapGraph.NodeTypeColour> colours, bool drawBoundries, bool drawTriangles)
     {
         var renderTexture = CreateRenderTexture(textureSize, Color.white);
 
-        DrawToRenderTexture(map, material, textureSize, meshSize, colours, drawBoundries,drawTriangles, drawCenters);
+        DrawToRenderTexture(map, material, textureSize, meshSize, colours, drawBoundries, drawTriangles);
 
         return CreateTextureFromRenderTexture(textureSize, renderTexture);
     }
@@ -78,7 +78,7 @@ public static class MapTextureGenerator
         return renderTexture;
     }
 
-    private static void DrawToRenderTexture(MapGraph map, Material material, int textureSize, int meshSize, List<MapNodeTypeColor> colours, bool drawBoundries, bool drawTriangles, bool drawCenters)
+    private static void DrawToRenderTexture(MapGraph map, Material material, int textureSize, int meshSize, List<MapGraph.NodeTypeColour> colours, bool drawBoundries, bool drawTriangles)
     {
         material.SetPass(0);
 
@@ -86,7 +86,7 @@ public static class MapTextureGenerator
         GL.LoadPixelMatrix(0, meshSize, 0, meshSize);
         GL.Viewport(new Rect(0, 0, textureSize, textureSize));
 
-        var coloursDictionary = new Dictionary<MapGraph.MapNodeType, Color>();
+        var coloursDictionary = new Dictionary<MapGraph.NodeType, Color>();
         foreach (var colour in colours)
         {
             if (!coloursDictionary.ContainsKey(colour.type))
@@ -97,17 +97,12 @@ public static class MapTextureGenerator
 
         DrawNodeTypes(map, coloursDictionary);
 
-        if (drawCenters)
-        {
-            DrawCenterPoints(map, Color.red);
-        }
-
         if (drawBoundries)
         {
             DrawEdges(map, Color.black);
         }
 
-        DrawRivers(map, 2, coloursDictionary[MapGraph.MapNodeType.FreshWater]);
+        DrawRivers(map, 2, coloursDictionary[MapGraph.NodeType.FreshWater]);
 
         if (drawTriangles)
         {
@@ -124,8 +119,8 @@ public static class MapTextureGenerator
 
         foreach (var edge in map.edges)
         {
-            var start = edge.GetStartPosition();
-            var end   = edge.GetEndPosition();
+            var start = edge.startPosition;
+            var end   = edge.endPosition;
 
             GL.Vertex3(start.x, start.z, 0);
             GL.Vertex3(end.x,   end.z,   0);
@@ -147,7 +142,7 @@ public static class MapTextureGenerator
                 var end   = edge.opposite.node.centerPoint;
 
                 GL.Vertex3(start.x, start.z, 0);
-                GL.Vertex3(end.x, end.z, 0);
+                GL.Vertex3(end.x,   end.z,   0);
             }
         }
 
@@ -166,8 +161,8 @@ public static class MapTextureGenerator
                 continue;
             }
 
-            var start = edge.GetStartPosition();
-            var end   = edge.GetEndPosition();
+            var start = edge.startPosition;
+            var end   = edge.endPosition;
 
             GL.Vertex3(start.x, start.z, 0);
             GL.Vertex3(end.x,   end.z,   0);
@@ -176,33 +171,14 @@ public static class MapTextureGenerator
         GL.End();
     }
 
-    private static void DrawCenterPoints(MapGraph map, Color color)
-    {
-        GL.Begin(GL.QUADS);
-        GL.Color(color);
-
-        foreach (var point in map.nodesByCenterPosition.Values)
-        {
-            var x = point.centerPoint.x;
-            var y = point.centerPoint.z;
-
-            GL.Vertex3(x - .25f, y - .25f, 0);
-            GL.Vertex3(x - .25f, y + .25f, 0);
-            GL.Vertex3(x + .25f, y + .25f, 0);
-            GL.Vertex3(x + .25f, y - .25f, 0);
-        }
-
-        GL.End();
-    }
-
-    private static void DrawNodeTypes(MapGraph map, Dictionary<MapGraph.MapNodeType, Color> colours)
+    private static void DrawNodeTypes(MapGraph map, Dictionary<MapGraph.NodeType, Color> colours)
     {
         GL.Begin(GL.TRIANGLES);
 
         foreach (var node in map.nodesByCenterPosition.Values)
         {
-            var color = colours.ContainsKey(node.nodeType) ? colours[node.nodeType] : Color.red;
-            GL.Color(color);
+            var colour = colours.ContainsKey(node.nodeType) ? colours[node.nodeType] : Color.red;
+            GL.Color(colour);
 
             foreach (var edge in node.GetEdges())
             {
@@ -210,8 +186,8 @@ public static class MapTextureGenerator
                 var end   = edge.destination.position;
 
                 GL.Vertex3(node.centerPoint.x, node.centerPoint.z, 0);
-                GL.Vertex3(start.x, start.z, 0);
-                GL.Vertex3(end.x, end.z, 0);
+                GL.Vertex3(start.x,            start.z,            0);
+                GL.Vertex3(end.x,              end.z,              0);
             }
         }
 
