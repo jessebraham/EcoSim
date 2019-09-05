@@ -4,44 +4,47 @@ using UnityEngine;
 public static class EnvironmentSpawner
 {
     // Trees will only spawn on Grass and TallGrass type nodes.
-    private static MapGraph.MapNodeType[] treeNodeTypes =
+    private static MapGraph.NodeType[] treeNodeTypes =
     {
-        MapGraph.MapNodeType.Grass,
-        MapGraph.MapNodeType.TallGrass,
+        MapGraph.NodeType.Grass,
+        MapGraph.NodeType.TallGrass,
     };
 
     // Rocks will only spawn on Grass, TallGrass, or Rocky type nodes.
-    private static MapGraph.MapNodeType[] rockNodeTypes =
+    private static MapGraph.NodeType[] rockNodeTypes =
     {
-        MapGraph.MapNodeType.Grass,
-        MapGraph.MapNodeType.TallGrass,
-        MapGraph.MapNodeType.Rocky,
+        MapGraph.NodeType.Grass,
+        MapGraph.NodeType.TallGrass,
+        MapGraph.NodeType.Rocky,
     };
 
+    private static MapGraph            mapGraph;
+    private static System.Random       prng;
     private static EnvironmentSettings settings;
-    private static PrefabSpawner       spawner;
 
 
-    public static void Spawn(EnvironmentSettings settings, Transform container, MapGraph mapGraph, int seed)
+    public static void Spawn(MapGraph mapGraph, Transform container, EnvironmentSettings settings, int seed)
     {
+        EnvironmentSpawner.mapGraph = mapGraph;
+        EnvironmentSpawner.prng     = new System.Random(seed);
         EnvironmentSpawner.settings = settings;
-        EnvironmentSpawner.spawner  = new PrefabSpawner(container, mapGraph, seed);
 
-        SpawnTrees();
-        SpawnRocks();
+        var spawner = new PrefabSpawner(container);
+        SpawnTrees(spawner);
+        SpawnRocks(spawner);
     }
 
 
-    static void SpawnTrees()
+    static void SpawnTrees(PrefabSpawner spawner)
     {
-        foreach (var node in spawner.FilterNodes(treeNodeTypes))
+        foreach (var node in mapGraph.FilterNodes(treeNodeTypes))
         {
             float probability;
             MeshRenderer treePrefab;
 
             // For now, Deciduous trees spawn on Grass and Coniferous trees
             // spawn on TallGrass.
-            if (node.nodeType == MapGraph.MapNodeType.Grass)
+            if (node.nodeType == MapGraph.NodeType.Grass)
             {
                 probability = settings.deciduousProbability;
                 treePrefab  = settings.deciduousTreePrefab;
@@ -50,8 +53,8 @@ public static class EnvironmentSpawner
             {
                 // Don't spawn coniferous trees beside water, or if none of the
                 // neighbouring nodes are of the same type, because I say so.
-                if (node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.MapNodeType.FreshWater)
-                    || !node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.MapNodeType.TallGrass))
+                if (node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.FreshWater)
+                    || !node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.TallGrass))
                 {
                     continue;
                 }
@@ -60,35 +63,56 @@ public static class EnvironmentSpawner
                 treePrefab  = settings.coniferousTreePrefab;
             }
 
-            if (spawner.ShouldSpawn(probability))
+            if (prng.NextDouble() < probability)
             {
-                MeshRenderer obj = spawner.SpawnPrefab(node, treePrefab, settings.treeScale, settings.treeScaleDeviation, RandomRotation());
+                MeshRenderer obj = spawner.SpawnPrefab(
+                    node.centerPoint - mapGraph.center,
+                    treePrefab,
+                    ScaleModifier(settings.treeScale, settings.treeScaleDeviation),
+                    RandomRotation()
+                );
                 obj.transform.gameObject.AddComponent<MeshCollider>();
+
+                // Mark the node as occupied.
+                node.occupiedByEnvironment = true;
             }
         }
     }
 
-    static void SpawnRocks()
+    static void SpawnRocks(PrefabSpawner spawner)
     {
-        foreach (var node in spawner.FilterNodes(rockNodeTypes))
+        foreach (var node in mapGraph.FilterNodes(rockNodeTypes))
         {
-            if (spawner.ShouldSpawn(settings.rockProbability))
+            if (prng.NextDouble() < settings.rockProbability)
             {
-                MeshRenderer obj = spawner.SpawnPrefab(node, settings.rockPrefab, settings.rockScale, settings.rockScaleDeviation, RandomRotation());
+                MeshRenderer obj = spawner.SpawnPrefab(
+                    node.centerPoint - mapGraph.center,
+                    settings.rockPrefab,
+                    ScaleModifier(settings.rockScale, settings.rockScaleDeviation),
+                    RandomRotation()
+                );
                 obj.transform.gameObject.AddComponent<MeshCollider>();
+
+                // Mark the node as occupied.
+                node.occupiedByEnvironment = true;
             }
         }
+    }
+
+    static float ScaleModifier(float scale, float scaleDeviation)
+    {
+        return scale + Mathf.Lerp(0, scaleDeviation, (float)prng.NextDouble());
     }
 
     static Quaternion RandomRotation()
     {
         // X and Z axis rotations are randomized within the bounds of the
         // maxRotation setting.
-        float x = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)spawner.prng.NextDouble());
-        float z = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)spawner.prng.NextDouble());
+        float x = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)prng.NextDouble());
+        float z = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)prng.NextDouble());
 
         // Y axis rotation can be any valid angle.
-        float y = (float)spawner.prng.NextDouble() * 360f;
+        float y = (float)prng.NextDouble() * 360f;
 
         return Quaternion.Euler(x, y, z);
     }
