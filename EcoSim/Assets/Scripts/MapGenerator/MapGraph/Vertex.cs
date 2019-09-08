@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public partial class MapGraph
@@ -9,14 +8,6 @@ public partial class MapGraph
         public Edge    leavingEdge;
         public Vector3 position;
 
-
-        public Edge GetDownSlopeEdge()
-        {
-            return GetEdges()
-                .Where(edge => edge.destination.position.y <= position.y)
-                .OrderBy(edge => edge.destination.position.y)
-                .FirstOrDefault();
-        }
 
         public IEnumerable<Edge> GetEdges()
         {

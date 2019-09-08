@@ -102,8 +102,6 @@ public static class MapTextureGenerator
             DrawEdges(map, Color.black);
         }
 
-        DrawRivers(map, 2, coloursDictionary[MapGraph.NodeType.FreshWater]);
-
         if (drawTriangles)
         {
             DrawDelaunayEdges(map, Color.red);
@@ -144,28 +142,6 @@ public static class MapTextureGenerator
                 GL.Vertex3(start.x, start.z, 0);
                 GL.Vertex3(end.x,   end.z,   0);
             }
-        }
-
-        GL.End();
-    }
-
-    private static void DrawRivers(MapGraph map, int minRiverSize, Color color)
-    {
-        GL.Begin(GL.LINES);
-        GL.Color(color);
-
-        foreach (var edge in map.edges)
-        {
-            if (edge.water < minRiverSize)
-            {
-                continue;
-            }
-
-            var start = edge.startPosition;
-            var end   = edge.endPosition;
-
-            GL.Vertex3(start.x, start.z, 0);
-            GL.Vertex3(end.x,   end.z,   0);
         }
 
         GL.End();

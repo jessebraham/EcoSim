@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using UnityEngine;
 
 public static class EnvironmentSpawner
@@ -51,10 +51,8 @@ public static class EnvironmentSpawner
             }
             else
             {
-                // Don't spawn coniferous trees beside water, or if none of the
-                // neighbouring nodes are of the same type, because I say so.
-                if (node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.FreshWater)
-                    || !node.GetNeighborNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.TallGrass))
+                // Don't spawn coniferous trees directly beside FreshWater.
+                if (node.GetNeighbourNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.FreshWater))
                 {
                     continue;
                 }

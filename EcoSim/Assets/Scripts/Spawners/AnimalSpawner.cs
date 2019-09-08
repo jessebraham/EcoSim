@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using UnityEngine;
 
 public static class AnimalSpawner
@@ -44,7 +44,7 @@ public static class AnimalSpawner
 
             // Randomize the neighbours so that we're not just iterating
             // through linearly.
-            var neighbours = spawnPoint.GetNeighborNodes()
+            var neighbours = spawnPoint.GetNeighbourNodes()
                 .OrderBy(_ => prng.Next())
                 .ToList();
 

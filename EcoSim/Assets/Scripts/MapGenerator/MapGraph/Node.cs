@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -44,7 +44,7 @@ public partial class MapGraph
             }
         }
 
-        public IEnumerable<Node> GetNeighborNodes()
+        public IEnumerable<Node> GetNeighbourNodes()
         {
             return GetEdges()
                 .Where(edge => edge.opposite?.node != null)
@@ -89,13 +89,6 @@ public partial class MapGraph
             return heightDifference.Value;
         }
 
-        public Vertex GetLowestCorner()
-        {
-            return GetCorners()
-                .OrderBy(point => point.position.y)
-                .FirstOrDefault();
-        }
-
         public bool IsEdge()
         {
             foreach (var edge in GetEdges())
@@ -107,16 +100,6 @@ public partial class MapGraph
             }
 
             return false;
-        }
-
-        public void SetNodeHeightToCornerHeight(Vertex targetCorner)
-        {
-            foreach (var corner in GetCorners())
-            {
-                corner.position = new Vector3(corner.position.x, targetCorner.position.y, corner.position.z);
-            }
-
-            centerPoint = new Vector3(centerPoint.x, targetCorner.position.y, centerPoint.z);
         }
     }
 }
