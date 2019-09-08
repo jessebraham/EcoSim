@@ -91,6 +91,7 @@ public static class MapGenerator
 
     private static void SetBeaches(MapGraph graph)
     {
+        // Set any nodes who have a neighbour of type SaltWater to type Beach.
         foreach (var node in graph.FilterNodes(MapGraph.NodeType.Grass))
         {
             foreach (var neighbour in node.GetNeighbourNodes())
@@ -100,6 +101,16 @@ public static class MapGenerator
                     node.nodeType = MapGraph.NodeType.Beach;
                     break;
                 }
+            }
+        }
+
+        // Perform a second pass, converting any Grass nodes who have 4 or more
+        // neighbours of type Beach to Beach.
+        foreach (var node in graph.FilterNodes(MapGraph.NodeType.Grass))
+        {
+            if (node.GetNeighbourNodes().Where(neighbour => neighbour.nodeType == MapGraph.NodeType.Beach).Count() >= 4)
+            {
+                node.nodeType = MapGraph.NodeType.Beach;
             }
         }
     }
@@ -138,7 +149,7 @@ public static class MapGenerator
         foreach (var node in graph.FilterNodes(MapGraph.NodeType.Grass))
         {
             if (node.elevation > minElevation
-                || node.GetHeightDifference() > minHeightDifference)
+                 || node.GetHeightDifference() > minHeightDifference)
             {
                 node.nodeType = MapGraph.NodeType.TallGrass;
                 continue;
