@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -10,6 +10,9 @@ public partial class MapGraph
         public NodeType nodeType;
         public Edge     startEdge;
 
+        public int numAnimalOccupants      = 0;
+        public int numEnvironmentOccupants = 0;
+
         public float elevation
         {
             get
@@ -17,14 +20,11 @@ public partial class MapGraph
                 return centerPoint.y;
             }
         }
-
-        public bool occupiedByAnimal      = false;
-        public bool occupiedByEnvironment = false;
         public bool occupied
         {
             get
             {
-                return occupiedByAnimal || occupiedByEnvironment;
+                return numAnimalOccupants > 0 || numEnvironmentOccupants > 0;
             }
         }
 

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PrefabSpawner
 {
@@ -8,19 +7,22 @@ public class PrefabSpawner
 
     public PrefabSpawner(Transform container)
     {
+        // Clear all elements within the specified container upon instantiation.
         this.container = container;
         ClearGameObjects();
     }
 
 
-    public MeshRenderer SpawnPrefab(Vector3 location, MeshRenderer prefab, Quaternion rotation)
+    public MeshRenderer SpawnPrefab(MeshRenderer prefab, Vector3 position, Quaternion rotation)
     {
-        return SpawnPrefab(location, prefab, 1f, rotation);
+        // Pass the parameters to the other SpawnPrefab function, using the
+        // default scaling (ie. 1).
+        return SpawnPrefab(prefab, position, rotation, 1f);
     }
 
-    public MeshRenderer SpawnPrefab(Vector3 location, MeshRenderer prefab, float scaleModifier, Quaternion rotation)
+    public MeshRenderer SpawnPrefab(MeshRenderer prefab, Vector3 position, Quaternion rotation, float scaleModifier)
     {
-        MeshRenderer obj     = Object.Instantiate(prefab, location, rotation);
+        MeshRenderer obj     = Object.Instantiate(prefab, position, rotation);
         obj.transform.parent = container;
 
         obj.transform.localScale *= scaleModifier;
@@ -31,14 +33,9 @@ public class PrefabSpawner
 
     void ClearGameObjects()
     {
-        var children = new List<GameObject>();
-        foreach (Transform child in container)
+        for (int i = container.childCount - 1; i >= 0; i--)
         {
-            children.Add(child.gameObject);
-        }
-
-        foreach (var child in children)
-        {
+            GameObject child = container.GetChild(i).gameObject;
             GameObject.DestroyImmediate(child);
         }
     }

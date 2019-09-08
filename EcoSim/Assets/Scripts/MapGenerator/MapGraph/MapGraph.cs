@@ -57,8 +57,13 @@ public partial class MapGraph
     public IEnumerable<Node> FilterNodes(IEnumerable<NodeType> types)
     {
         return nodesByCenterPosition.Values
-            .Where(node => types.Contains(node.nodeType)
-                           && !node.occupied);
+            .Where(node => types.Contains(node.nodeType));
+    }
+
+    public IEnumerable<Node> FilterNodes(NodeType type)
+    {
+        return nodesByCenterPosition.Values
+            .Where(node => node.nodeType == type);
     }
 
 

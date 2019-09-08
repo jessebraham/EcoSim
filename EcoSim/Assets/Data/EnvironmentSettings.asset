@@ -16,11 +16,16 @@ MonoBehaviour:
     type: 3}
   deciduousTreePrefab: {fileID: 2336884, guid: 7c5aafe3fe2c6ef4a9150f7f44653760, type: 3}
   rockPrefab: {fileID: 2380810, guid: 5578b82f17c954843901e8b68ca21dcc, type: 3}
-  coniferousProbability: 0.725
-  deciduousProbability: 0.3
-  treeScale: 0.1375
-  treeScaleDeviation: 0.35
-  rockProbability: 0.15
+  maxOccupantsPerNode: 2
+  coniferousAvgDensity: 1.75
+  deciduousAvgDensity: 0.8
+  rockAvgDensity: 0.15
+  treePositionDeviation: 2
+  treeRotationDeviation: 5
+  coniferousTreeScale: 0.325
+  deciduousTreeScale: 0.275
+  treeScaleDeviation: 0.3
+  rockPositionDeviation: 2
+  rockRotationDeviation: 5
   rockScale: 0.3
   rockScaleDeviation: 0.8
-  maxRotation: 8

@@ -1,23 +1,8 @@
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 public static class EnvironmentSpawner
 {
-    // Trees will only spawn on Grass and TallGrass type nodes.
-    private static MapGraph.NodeType[] treeNodeTypes =
-    {
-        MapGraph.NodeType.Grass,
-        MapGraph.NodeType.TallGrass,
-    };
-
-    // Rocks will only spawn on Grass, TallGrass, or Rocky type nodes.
-    private static MapGraph.NodeType[] rockNodeTypes =
-    {
-        MapGraph.NodeType.Grass,
-        MapGraph.NodeType.TallGrass,
-        MapGraph.NodeType.Rocky,
-    };
-
     private static MapGraph            mapGraph;
     private static System.Random       prng;
     private static EnvironmentSettings settings;
@@ -37,77 +22,121 @@ public static class EnvironmentSpawner
 
     static void SpawnTrees(PrefabSpawner spawner)
     {
-        foreach (var node in mapGraph.FilterNodes(treeNodeTypes))
+        var tallGrassNodes = mapGraph.FilterNodes(MapGraph.NodeType.TallGrass).ToList();
+        int numConiferous  = (int)(tallGrassNodes.Count * settings.coniferousAvgDensity);
+
+        var grassNodes   = mapGraph.FilterNodes(MapGraph.NodeType.Grass).ToList();
+        int numDeciduous = (int)(grassNodes.Count * settings.deciduousAvgDensity);
+
+        // Spawn coniferous trees.
+        for (int i = 0; i < numConiferous; i++)
         {
-            float probability;
-            MeshRenderer treePrefab;
-
-            // For now, Deciduous trees spawn on Grass and Coniferous trees
-            // spawn on TallGrass.
-            if (node.nodeType == MapGraph.NodeType.Grass)
+            // Randomly select a node. If it has more than the maximum number
+            // of occupants, or any of the neighbouring nodes are FreshWater,
+            // try again.
+            var node = tallGrassNodes.ElementAt(prng.Next(tallGrassNodes.Count));
+            if (node.numEnvironmentOccupants >= settings.maxOccupantsPerNode
+                || node.GetNeighbourNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.FreshWater))
             {
-                probability = settings.deciduousProbability;
-                treePrefab  = settings.deciduousTreePrefab;
-            }
-            else
-            {
-                // Don't spawn coniferous trees directly beside FreshWater.
-                if (node.GetNeighbourNodes().Any(neighbour => neighbour.nodeType == MapGraph.NodeType.FreshWater))
-                {
-                    continue;
-                }
-
-                probability = settings.coniferousProbability;
-                treePrefab  = settings.coniferousTreePrefab;
+                i--;
+                continue;
             }
 
-            if (prng.NextDouble() < probability)
-            {
-                MeshRenderer obj = spawner.SpawnPrefab(
-                    node.centerPoint - mapGraph.center,
-                    treePrefab,
-                    ScaleModifier(settings.treeScale, settings.treeScaleDeviation),
-                    RandomRotation()
-                );
-                obj.transform.gameObject.AddComponent<MeshCollider>();
-
-                // Mark the node as occupied.
-                node.occupiedByEnvironment = true;
-            }
+            SpawnTreePrefab(spawner, node, settings.coniferousTreePrefab, settings.coniferousTreeScale);
         }
+
+        // Spawn deciduous trees.
+        for (int i = 0; i < numDeciduous; i++)
+        {
+            // Randomly select a node. If it has more than the maximum number
+            // of occupants, try again.
+            var node = grassNodes.ElementAt(prng.Next(grassNodes.Count));
+            if (node.numEnvironmentOccupants >= settings.maxOccupantsPerNode)
+            {
+                i--;
+                continue;
+            }
+
+            SpawnTreePrefab(spawner, node, settings.deciduousTreePrefab, settings.deciduousTreeScale);
+        }
+    }
+
+    static void SpawnTreePrefab(PrefabSpawner spawner, MapGraph.Node node, MeshRenderer prefab, float scale)
+    {
+        MeshRenderer obj = spawner.SpawnPrefab(
+            prefab,
+            RandomOffset(node.centerPoint, mapGraph.center, settings.treePositionDeviation),
+            RandomRotation(settings.treeRotationDeviation),
+            RandomScaling(scale, settings.treeScaleDeviation)
+        );
+        obj.transform.gameObject.AddComponent<MeshCollider>();
+
+        // Increment the number of environment occupants for the
+        // current node.
+        node.numEnvironmentOccupants++;
     }
 
     static void SpawnRocks(PrefabSpawner spawner)
     {
-        foreach (var node in mapGraph.FilterNodes(rockNodeTypes))
-        {
-            if (prng.NextDouble() < settings.rockProbability)
-            {
-                MeshRenderer obj = spawner.SpawnPrefab(
-                    node.centerPoint - mapGraph.center,
-                    settings.rockPrefab,
-                    ScaleModifier(settings.rockScale, settings.rockScaleDeviation),
-                    RandomRotation()
-                );
-                obj.transform.gameObject.AddComponent<MeshCollider>();
+        var allowedNodeTypes = new MapGraph.NodeType[] {
+            MapGraph.NodeType.Grass,
+            MapGraph.NodeType.TallGrass,
+            MapGraph.NodeType.Rocky
+        };
 
-                // Mark the node as occupied.
-                node.occupiedByEnvironment = true;
+        var rockNodes = mapGraph.FilterNodes(allowedNodeTypes).ToList();
+        int numRocks  = (int)(rockNodes.Count * settings.rockAvgDensity);
+
+        for (int i = 0; i < numRocks; i++)
+        {
+            // Randomly select a node. If it has more than the maximum number
+            // of occupants, try again.
+            var node = rockNodes.ElementAt(prng.Next(rockNodes.Count));
+            if (node.numEnvironmentOccupants > 0)
+            {
+                i--;
+                continue;
             }
+
+            MeshRenderer obj = spawner.SpawnPrefab(
+                settings.rockPrefab,
+                RandomOffset(node.centerPoint, mapGraph.center, settings.rockPositionDeviation),
+                RandomRotation(settings.rockRotationDeviation),
+                RandomScaling(settings.rockScale, settings.rockScaleDeviation)
+            );
+            obj.transform.gameObject.AddComponent<MeshCollider>();
+
+            // Increment the number of environmental occupants for the
+            // current node.
+            node.numEnvironmentOccupants++;
         }
     }
 
-    static float ScaleModifier(float scale, float scaleDeviation)
+    static Vector3 RandomOffset(Vector3 nodeCenter, Vector3 mapCenter, float maxDeviation)
     {
-        return scale + Mathf.Lerp(0, scaleDeviation, (float)prng.NextDouble());
+        // Subtract the map center point from the node center to get the proper
+        // global coordinates, and apply a random offset to this position's X
+        // and Z axes.
+        float x = Mathf.Lerp(-maxDeviation, maxDeviation, (float)prng.NextDouble()) / 2f;
+        float z = Mathf.Lerp(-maxDeviation, maxDeviation, (float)prng.NextDouble()) / 2f;
+
+        return nodeCenter - mapCenter + new Vector3(x, 0f, z);
     }
 
-    static Quaternion RandomRotation()
+    static float RandomScaling(float scale, float maxDeviation)
     {
-        // X and Z axis rotations are randomized within the bounds of the
-        // maxRotation setting.
-        float x = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)prng.NextDouble());
-        float z = Mathf.Lerp(-settings.maxRotation, settings.maxRotation, (float)prng.NextDouble());
+        // Apply a random deviation to the provided scale. Deviation can be
+        // positive or negative, making the default `scale` the median.
+        float deviation = Mathf.Lerp(-maxDeviation, maxDeviation, (float)prng.NextDouble()) / 2f;
+        return scale + deviation;
+    }
+
+    static Quaternion RandomRotation(float maxRotation)
+    {
+        // X and Z axis rotations are randomized within the bounds of
+        // `maxRotation`.
+        float x = Mathf.Lerp(-maxRotation, maxRotation, (float)prng.NextDouble());
+        float z = Mathf.Lerp(-maxRotation, maxRotation, (float)prng.NextDouble());
 
         // Y axis rotation can be any valid angle.
         float y = (float)prng.NextDouble() * 360f;

@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 public static class AnimalSpawner
@@ -37,10 +37,10 @@ public static class AnimalSpawner
         for (int i = 0; i < initialPopulationSize; i++)
         {
             // Spawn a new instance of the prefab.
-            MeshRenderer obj = spawner.SpawnPrefab(spawnPoint.centerPoint - mapGraph.center, settings.prefab, RandomRotation());
+            MeshRenderer obj = spawner.SpawnPrefab(settings.prefab, spawnPoint.centerPoint - mapGraph.center, RandomRotation());
 
             // Mark the node as occupied.
-            spawnPoint.occupiedByAnimal = true;
+            spawnPoint.numAnimalOccupants++;
 
             // Randomize the neighbours so that we're not just iterating
             // through linearly.
